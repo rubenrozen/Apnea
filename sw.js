@@ -1,4 +1,4 @@
-const CACHE = 'statique-v9';
+const CACHE = 'statique-v10';
 const ASSETS = ['./', './index.html'];
 
 self.addEventListener('install', e => {
