@@ -38,6 +38,9 @@ jobs:
       - name: Tests du moteur
         run: node tests/engine.test.js
 
+      - name: Couverture des traductions
+        run: node tests/i18n.test.js
+
       - name: Syntaxe du service worker
         run: node --check sw.js
 
