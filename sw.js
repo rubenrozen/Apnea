@@ -1,4 +1,4 @@
-const CACHE = 'inspir-v22';
+const CACHE = 'inspir-v23';
 const ASSETS = ['./', './index.html'];
 
 self.addEventListener('install', e => {
