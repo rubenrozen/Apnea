@@ -1,5 +1,6 @@
-const CACHE = 'inspir-v23';
-const ASSETS = ['./', './index.html'];
+const CACHE = 'inspir-v24';
+const ASSETS = ['./', './index.html',
+  './i18n/en.json', './i18n/es.json', './i18n/it.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
