@@ -53,6 +53,7 @@ jobs:
 
           mkdir -p _site
           cp index.html sw.js _site/
+          cp -r i18n _site/i18n
           printf 'window.STATIQUE_CONFIG = { url: "%s", key: "%s" };\n' "$SB_URL" "$SB_KEY" > _site/config.js
           echo "config.js généré ($(wc -c < _site/config.js) octets)"
 
