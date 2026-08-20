@@ -24,7 +24,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Le moteur de tables est le cœur du produit : une régression silencieuse
+  # produirait des tables fausses sans que rien ne le signale. Ce job bloque
+  # le déploiement en cas d'échec.
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Tests du moteur
+        run: node tests/engine.test.js
+
+      - name: Syntaxe du service worker
+        run: node --check sw.js
+
+      - name: Syntaxe de l'application
+        run: |
+          node -e "
+            const fs=require('fs');
+            const h=fs.readFileSync('index.html','utf8');
+            const m=[...h.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+            if(!m.length){ console.error('Aucun script inline trouvé'); process.exit(1); }
+            fs.writeFileSync('/tmp/app.js', m[m.length-1][1]);
+          "
+          node --check /tmp/app.js
+
   build:
+    needs: tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
