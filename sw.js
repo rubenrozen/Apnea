@@ -1,15 +1,15 @@
-const CACHE = 'inspir-v30';
+const CACHE = 'inspir-v31';
 const ASSETS = ['./', './index.html',
   './i18n/en.json', './i18n/es.json', './i18n/it.json'];
 
 // Les images sont précachées séparément : une image absente ne doit pas
 // faire échouer l'installation du service worker.
 const IMAGES = [
-  './img/img-accueil.jpg', './img/img-tables.jpg', './img/img-souffle.jpg',
-  './img/img-seances.jpg', './img/img-guide.jpg', './img/img-fin.jpg',
-  './img/img-table-co2.jpg', './img/img-table-o2.jpg', './img/img-table-custom.jpg',
-  './img/img-prog-max.jpg', './img/img-prog-premiers.jpg',
-  './img/img-prog-co2.jpg', './img/img-prog-souffle.jpg'
+  './img/accueil.jpg', './img/tables.jpg', './img/souffle.jpg',
+  './img/seances.jpg', './img/guide.jpg', './img/fin.jpg',
+  './img/table-co2.jpg', './img/table-o2.jpg', './img/table-custom.jpg',
+  './img/prog-max.jpg', './img/prog-premiers.jpg',
+  './img/prog-co2.jpg', './img/prog-souffle.jpg'
 ];
 
 self.addEventListener('install', e => {
