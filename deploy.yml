@@ -1,0 +1,105 @@
+# Déploiement de Statique sur GitHub Pages.
+# config.js est généré ici depuis les secrets du dépôt, il n'est jamais commité.
+#
+# Prérequis (une seule fois) :
+#   Settings > Pages > Source = "GitHub Actions"
+#   Settings > Secrets and variables > Actions > New repository secret :
+#     SUPABASE_URL              = https://<projet>.supabase.co   (sans /rest/v1/)
+#     SUPABASE_PUBLISHABLE_KEY  = sb_publishable_...
+
+name: Déploiement Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  # Le moteur de tables est le cœur du produit : une régression silencieuse
+  # produirait des tables fausses sans que rien ne le signale. Ce job bloque
+  # le déploiement en cas d'échec.
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Tests du moteur
+        run: node tests/engine.test.js
+
+      - name: Couverture des traductions
+        run: node tests/i18n.test.js
+
+      - name: Syntaxe du service worker
+        run: node --check sw.js
+
+      - name: Syntaxe de l'application
+        run: |
+          node -e "
+            const fs=require('fs');
+            const h=fs.readFileSync('index.html','utf8');
+            const m=[...h.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+            if(!m.length){ console.error('Aucun script inline trouvé'); process.exit(1); }
+            fs.writeFileSync('/tmp/app.js', m[m.length-1][1]);
+          "
+          node --check /tmp/app.js
+
+  build:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Générer config.js depuis les secrets
+        env:
+          SB_URL: ${{ secrets.SUPABASE_URL }}
+          SB_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SB_URL:-}" ] || [ -z "${SB_KEY:-}" ]; then
+            echo "::error::Secrets SUPABASE_URL et/ou SUPABASE_PUBLISHABLE_KEY absents du dépôt."
+            exit 1
+          fi
+
+          # Garde-fou : l'URL doit être la racine, pas l'endpoint REST
+          case "$SB_URL" in
+            */rest/v1*) echo "::error::SUPABASE_URL contient /rest/v1 — mets uniquement https://<projet>.supabase.co"; exit 1 ;;
+          esac
+
+          # Garde-fou : refuser une clé de service, qui contourne le RLS
+          case "$SB_KEY" in
+            *service_role*|sb_secret_*) echo "::error::Clé de service détectée. N'utilise que la clé publiable."; exit 1 ;;
+          esac
+
+          mkdir -p _site
+          cp index.html sw.js _site/
+          cp -r i18n _site/i18n
+          if [ -d img ]; then cp -r img _site/img; fi
+          printf 'window.STATIQUE_CONFIG = { url: "%s", key: "%s" };\n' "$SB_URL" "$SB_KEY" > _site/config.js
+          echo "config.js généré ($(wc -c < _site/config.js) octets)"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
