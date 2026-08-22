@@ -1,4 +1,4 @@
-const CACHE = 'inspir-v31';
+const CACHE = 'inspir-v32';
 const ASSETS = ['./', './index.html',
   './i18n/en.json', './i18n/es.json', './i18n/it.json'];
 
